@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<meta name="description" content="Seu assistente pessoal inteligente">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>JARVIS — Assistente Pessoal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500&display=swap');
+
+  :root {
+    --bg-deep:    #040810;
+    --bg-panel:   #0a1628;
+    --bg-card:    #0f1e38;
+    --accent:     #00d4ff;
+    --accent2:    #0077ff;
+    --accent3:    #7b2fff;
+    --glow:       0 0 24px rgba(0,212,255,0.35);
+    --danger:     #ff3b5c;
+    --success:    #00ffaa;
+    --text:       #e0f0ff;
+    --muted:      #4a6080;
+    --border:     rgba(0,212,255,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+
+  /* ── HEADER ─────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 10px;
+    background: linear-gradient(180deg, rgba(0,212,255,0.06) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.4; }
+  }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .time-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── AVATAR / CORE ───────────────────────────── */
+  .core-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0 12px;
+    flex-shrink: 0;
+  }
+  .avatar-ring {
+    position: relative;
+    width: 90px; height: 90px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .ring-1 {
+    width: 90px; height: 90px;
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+    animation: spin 8s linear infinite;
+  }
+  .ring-2 {
+    width: 72px; height: 72px;
+    border-color: var(--accent2);
+    border-style: dashed;
+    animation: spin 5s linear infinite reverse;
+  }
+  .ring-3 {
+    width: 54px; height: 54px;
+    border-color: var(--accent3);
+    animation: spin 3s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .avatar-core {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--accent), var(--accent2), var(--accent3));
+    box-shadow: 0 0 30px rgba(0,212,255,0.6), inset 0 0 15px rgba(255,255,255,0.1);
+    z-index: 1;
+    transition: transform 0.3s;
+  }
+  .avatar-core.listening {
+    animation: breathe 1.2s ease-in-out infinite;
+    box-shadow: 0 0 50px rgba(0,212,255,0.9);
+  }
+  @keyframes breathe {
+    0%,100% { transform: scale(1); } 50% { transform: scale(1.2); }
+  }
+  .jarvis-state {
+    margin-top: 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    opacity: 0.7;
+  }
+
+  /* ── CHAT ────────────────────────────────────── */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 3px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--accent2); border-radius: 3px; }
+
+  .msg {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(8px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .msg.jarvis {
+    align-self: flex-start;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+    border-bottom-right-radius: 4px;
+    color: #fff;
+  }
+  .msg-label {
+    font-size: 10px;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    opacity: 0.5;
+  }
+  .typing-dots span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: dot 1.2s infinite;
+    margin: 0 2px;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot {
+    0%,60%,100% { transform: scale(1); opacity:0.4; }
+    30% { transform: scale(1.4); opacity:1; }
+  }
+
+  /* ── QUICK ACTIONS ───────────────────────────── */
+  .quick-actions {
+    padding: 8px 14px;
+    flex-shrink: 0;
+  }
+  .qa-label {
+    font-size: 10px;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .qa-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .qa-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .qa-btn:active { transform: scale(0.93); background: rgba(0,212,255,0.1); }
+  .qa-btn .icon { font-size: 20px; }
+  .qa-btn .label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+  }
+
+  /* ── INPUT BAR ───────────────────────────────── */
+  .input-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(4,8,16,0.95);
+    flex-shrink: 0;
+  }
+  .input-field {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 12px 18px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); }
+
+  .btn-mic {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    box-shadow: var(--glow);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-mic:active { transform: scale(0.9); }
+  .btn-mic.recording {
+    background: linear-gradient(135deg, var(--danger), #ff6b00);
+    animation: micPulse 1s infinite;
+  }
+  @keyframes micPulse {
+    0%,100% { box-shadow: 0 0 10px rgba(255,59,92,0.5); }
+    50% { box-shadow: 0 0 30px rgba(255,59,92,0.9); }
+  }
+  .btn-send {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--accent);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-send:active { transform: scale(0.9); background: rgba(0,212,255,0.1); }
+
+  /* ── MODAL ───────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(4,8,16,0.92);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 24px 20px;
+    animation: slideUp 0.35s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity:0; }
+    to   { transform: translateY(0);    opacity:1; }
+  }
+  .modal-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+    margin-top: -4px;
+  }
+
+  /* ── SETTINGS ────────────────────────────────── */
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-label { font-size: 14px; }
+  .setting-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle {
+    width: 46px; height: 26px;
+    border-radius: 13px;
+    background: var(--muted);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent2); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px; left: 3px;
+    transition: left 0.3s;
+  }
+  .toggle.on::after { left: 23px; }
+
+  .api-input {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    margin-top: 8px;
+    outline: none;
+    font-family: monospace;
+  }
+  .api-input:focus { border-color: var(--accent); }
+
+  .save-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .save-btn:active { opacity: 0.8; }
+
+  /* ── MODULES GRID ────────────────────────────── */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .module-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .module-card:active { transform: scale(0.97); border-color: var(--accent); }
+  .module-icon { font-size: 26px; margin-bottom: 6px; }
+  .module-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .module-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* ── NAV ─────────────────────────────────────── */
+  nav {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--bg-deep);
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 10px 0 8px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 24px; height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .nav-label {
+    font-size: 9px;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── PAGES ───────────────────────────────────── */
+  .page { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  .page.active { display: flex; }
+
+  /* AUTOMATIONS page */
+  .automations-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .auto-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .auto-info { flex: 1; }
+  .auto-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+  }
+  .auto-desc { font-size: 12px; color: var(--muted); }
+  .run-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .run-btn:active { background: rgba(0,212,255,0.2); transform: scale(0.9); }
+
+  /* RESEARCH page */
+  .research-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .research-result {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    animation: fadeUp 0.3s ease;
+  }
+  .research-result h3 {
+    font-size: 13px;
+    color: var(--accent);
+    font-family: 'Orbitron', monospace;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .research-result p { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  /* ── PAGE HEADER ─────────────────────────────── */
+  .page-header {
+    padding: 16px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .page-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .search-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+  .search-field {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 16px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .search-field:focus { border-color: var(--accent); }
+  .search-btn {
+    padding: 10px 16px;
+    border-radius: 24px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--muted);
+    gap: 10px;
+    padding: 40px;
+  }
+  .empty-state .icon { font-size: 48px; opacity: 0.3; }
+  .empty-state p { font-size: 13px; text-align: center; line-height: 1.6; }
+
+  .voice-hint {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 14px 6px;
+    flex-shrink: 0;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">JARVIS</div>
+  <div class="header-right">
+    <div class="time-display" id="timeDisplay">--:--</div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+</header>
+
+<div class="page active" id="pageChatWrap">
+  <div class="core-section">
+    <div class="avatar-ring" id="avatarRing">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="avatar-core" id="avatarCore"></div>
+    </div>
+    <div class="jarvis-state" id="jarvisState">PRONTO</div>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
+  <div class="quick-actions">
+    <div class="qa-label">AÇÕES RÁPIDAS</div>
+    <div class="qa-grid">
+      <button class="qa-btn" onclick="quickAction('Qual é o clima hoje?')"><span class="icon">⛅</span><span class="label">CLIMA</span></button>
+      <button class="qa-btn" onclick="quickAction('Me faça um resumo do dia')"><span class="icon">📋</span><span class="label">RESUMO</span></button>
+      <button class="qa-btn" onclick="quickAction('Me dê uma dica de produtividade')"><span class="icon">🧠</span><span class="label">DICA</span></button>
+      <button class="qa-btn" onclick="quickAction('Crie uma lista de tarefas para hoje')"><span class="icon">✅</span><span class="label">TAREFAS</span></button>
+    </div>
+  </div>
+
+  <div class="voice-hint" id="voiceHint">💬 Digite ou toque no microfone para falar</div>
+
+  <div class="input-bar">
+    <input class="input-field" id="inputField" placeholder="Fale com o Jarvis..." autocomplete="off" />
+    <button class="btn-send" onclick="sendMessage()" title="Enviar">➤</button>
+    <button class="btn-mic" id="btnMic" onclick="toggleVoice()" title="Microfone">🎤</button>
+  </div>
+</div>
+
+<div class="page" id="pageAuto">
+  <div class="page-header"><div class="page-title">AUTOMAÇÕES</div><div class="page-sub">Rotinas inteligentes de um toque</div></div>
+  <div class="automations-list">
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">🌅 MANHÃ</div><div class="auto-desc">Clima, agenda, motivação e tarefas do dia</div></div><button class="run-btn" onclick="runAutomation('morning')">▶</button></div>
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">📚 ESTUDOS</div><div class="auto-desc">Técnica Pomodoro, resumo de tópico e quiz rápido</div></div><button class="run-btn" onclick="runAutomation('study')">▶</button></div>
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">💼 TRABALHO</div><div class="auto-desc">Prioriza tarefas, define foco e bloqueia distrações</div></div><button class="run-btn" onclick="runAutomation('work')">▶</button></div>
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">🎮 GAMING</div><div class="auto-desc">Dicas de jogo, estratégias e informações rápidas</div></div><button class="run-btn" onclick="runAutomation('gaming')">▶</button></div>
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">🌙 NOITE</div><div class="auto-desc">Revisão do dia, planejamento de amanhã e relaxamento</div></div><button class="run-btn" onclick="runAutomation('night')">▶</button></div>
+    <div class="auto-card"><div class="auto-info"><div class="auto-name">🧘 FOCO</div><div class="auto-desc">Modo concentração com timer e checklist</div></div><button class="run-btn" onclick="runAutomation('focus')">▶</button></div>
+  </div>
+</div>
+
+<div class="page" id="pageSearch">
+  <div class="page-header"><div class="page-title">PESQUISA</div><div class="page-sub">Busca inteligente e análise de conteúdo</div></div>
+  <div class="search-row"><input class="search-field" id="searchField" placeholder="Pesquisar qualquer coisa..." /><button class="search-btn" onclick="doSearch()">🔍</button></div>
+  <div class="research-area" id="researchArea"><div class="empty-state"><span class="icon">🔭</span><p>Digite um tópico e o Jarvis vai pesquisar, resumir e analisar tudo pra você.</p></div></div>
+</div>
+
+<div class="page" id="pageModules">
+  <div class="page-header"><div class="page-title">MÓDULOS</div><div class="page-sub">Ferramentas especializadas</div></div>
+  <div style="flex:1; overflow-y:auto; padding:14px;">
+    <div class="modules-grid">
+      <div class="module-card" onclick="openModule('summarize')"><div class="module-icon">📝</div><div class="module-name">RESUMO</div><div class="module-desc">Cole qualquer texto e o Jarvis resume</div></div>
+      <div class="module-card" onclick="openModule('translate')"><div class="module-icon">🌐</div><div class="module-name">TRADUTOR</div><div class="module-desc">Tradução instantânea para qualquer idioma</div></div>
+      <div class="module-card" onclick="openModule('task')"><div class="module-icon">✅</div><div class="module-name">TAREFAS</div><div class="module-desc">Organize seu dia com IA</div></div>
+      <div class="module-card" onclick="openModule('explain')"><div class="module-icon">💡</div><div class="module-name">EXPLICAR</div><div class="module-desc">Explica qualquer assunto de forma simples</div></div>
+      <div class="module-card" onclick="openModule('write')"><div class="module-icon">✍️</div><div class="module-name">REDAÇÃO</div><div class="module-desc">Textos, emails e mensagens com IA</div></div>
+      <div class="module-card" onclick="openModule('math')"><div class="module-icon">🧮</div><div class="module-name">MATEMÁTICA</div><div class="module-desc">Resolve e explica passo a passo</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="pageConfig">
+  <div class="page-header"><div class="page-title">CONFIGURAÇÕES</div><div class="page-sub">Personalize o Jarvis</div></div>
+  <div style="flex:1; overflow-y:auto; padding:14px;">
+    <div class="setting-row"><div><div class="setting-label">🔑 Chave API</div><div class="setting-desc">Conecte sua chave Anthropic (opcional)</div><input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-..." /></div></div>
+    <div class="setting-row"><div><div class="setting-label">🎤 Reconhecimento de Voz</div><div class="setting-desc">Habilitar entrada por microfone</div></div><div class="toggle on" id="toggleVoiceOpt" onclick="toggleSetting('voice')"></div></div>
+    <div class="setting-row"><div><div class="setting-label">🔊 Voz do Jarvis</div><div class="setting-desc">Jarvis fala as respostas em voz alta</div></div><div class="toggle on" id="toggleSpeech" onclick="toggleSetting('speech')"></div></div>
+    <div class="setting-row"><div><div class="setting-label">🌙 Modo Noturno</div><div class="setting-desc">Interface ainda mais escura</div></div><div class="toggle" id="toggleDark" onclick="toggleSetting('dark')"></div></div>
+    <div class="setting-row"><div><div class="setting-label">👤 Nome do Usuário</div><div class="setting-desc">Como o Jarvis vai te chamar</div><input class="api-input" type="text" id="userNameInput" placeholder="Seu nome..." style="margin-top:8px" /></div></div>
+    <button class="save-btn" onclick="saveSettings()">SALVAR CONFIGURAÇÕES</button>
+    <div style="margin-top:20px; padding:14px; background:var(--bg-card); border-radius:14px; border:1px solid var(--border);"><div style="font-family:'Orbitron',monospace; font-size:11px; color:var(--accent); letter-spacing:2px; margin-bottom:10px;">INSTALAR APP</div><div style="font-size:12px; color:var(--muted); line-height:1.7;">📱 <b style="color:var(--text)">Android:</b> Toque em ⋮ → "Adicionar à tela inicial"<br>🍎 <b style="color:var(--text)">iPhone:</b> Toque em ↑ → "Adicionar à Tela de Início"<br>💻 <b style="color:var(--text)">Chrome:</b> Ícone ⊕ na barra de endereços</div><button class="save-btn" style="margin-top:12px; background:linear-gradient(135deg,#00ffaa,#00d4ff)" onclick="triggerInstall()">INSTALAR JARVIS</button></div>
+  </div>
+</div>
+
+<nav>
+  <button class="nav-btn active" onclick="showPage('chat')" id="nav-chat"><span>💬</span><span class="nav-label">CHAT</span></button>
+  <button class="nav-btn" onclick="showPage('auto')" id="nav-auto"><span>⚡</span><span class="nav-label">AUTO</span></button>
+  <button class="nav-btn" onclick="showPage('search')" id="nav-search"><span>🔍</span><span class="nav-label">BUSCA</span></button>
+  <button class="nav-btn" onclick="showPage('modules')" id="nav-modules"><span>🧩</span><span class="nav-label">MÓDULOS</span></button>
+  <button class="nav-btn" onclick="showPage('config')" id="nav-config"><span>⚙️</span><span class="nav-label">CONFIG</span></button>
+</nav>
+
+<div class="modal-overlay" id="moduleModal" onclick="closeModal(event)">
+  <div class="modal-card">
+    <div class="modal-title" id="modalTitle">MÓDULO<button class="modal-close" onclick="closeModuleModal()">✕</button></div>
+    <textarea id="modalInput" class="api-input" rows="5" placeholder="Cole seu texto aqui..." style="resize:none; height:120px;"></textarea>
+    <button class="save-btn" onclick="runModule()" id="modalRunBtn">PROCESSAR</button>
+    <div id="modalOutput" style="margin-top:12px; font-size:13px; line-height:1.7; color:var(--text); white-space:pre-wrap;"></div>
+  </div>
+</div>
+
+<script>
+let settings = {apiKey: '',userName: 'Usuário',voiceInput: true,speechOutput: true,darkMode: false,};
+let conversationHistory = [];
+let recognition = null;
+let isRecording = false;
+let currentModule = null;
+let deferredInstallPrompt = null;
+
+window.addEventListener('load', () => {loadSettings(); updateClock(); setInterval(updateClock, 1000); initSpeechRecognition(); showWelcome();});
+window.addEventListener('beforeinstallprompt', (e) => {e.preventDefault(); deferredInstallPrompt = e;});
+
+function triggerInstall() {if (deferredInstallPrompt) {deferredInstallPrompt.prompt();} else {addJarvisMsg('Para instalar: toque nos 3 pontos do navegador (Android) ou no ícone de compartilhar (iPhone) e selecione "Adicionar à Tela Inicial".'); showPage('chat');}}
+
+function updateClock() {const now = new Date(); document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });}
+
+function showPage(p) {const map = { chat:'Chat', auto:'Auto', search:'Search', modules:'Modules', config:'Config' }; document.querySelectorAll('.page').forEach(el => el.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active')); document.getElementById('page' + map[p]).classList.add('active'); document.getElementById('nav-' + p).classList.add('active');}
+
+function showWelcome() {const hour = new Date().getHours(); const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'; const name = settings.userName || 'Usuário'; addJarvisMsg(`${greeting}, ${name}! 👋\n\nSou o **JARVIS**, seu assistente pessoal inteligente.\n\nPosso te ajudar com:\n• Perguntas e respostas\n• Resumos e explicações\n• Organização de tarefas\n• Pesquisas e análises\n• Rotinas automáticas\n\nComo posso te ajudar hoje?`);}
+
+function addJarvisMsg(text, typing = false) {const area = document.getElementById('chatArea'); const div = document.createElement('div'); div.className = 'msg jarvis'; if (typing) {div.innerHTML = `<div class="msg-label">JARVIS</div><div class="typing-dots"><span></span><span></span><span></span></div>`; div.id = 'typingMsg';} else {const formatted = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); div.innerHTML = `<div class="msg-label">JARVIS</div>${formatted}`; if (settings.speechOutput) speak(text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/•/g, '').substring(0, 200));} area.appendChild(div); area.scrollTop = area.scrollHeight; return div;}
+
+function addUserMsg(text) {const area = document.getElementById('chatArea'); const div = document.createElement('div'); div.className = 'msg user'; div.innerHTML = `<div class="msg-label">VOCÊ</div>${text}`; area.appendChild(div); area.scrollTop = area.scrollHeight;}
+
+async function sendMessage() {const field = document.getElementById('inputField'); const text = field.value.trim(); if (!text) return; field.value = ''; addUserMsg(text); await askJarvis(text);}
+
+document.getElementById('inputField').addEventListener('keydown', (e) => {if (e.key === 'Enter') sendMessage();});
+
+function quickAction(prompt) {addUserMsg(prompt); askJarvis(prompt);}
+
+async function askJarvis(userMessage, systemExtra = '') {setJarvisState('PENSANDO'); const typingEl = addJarvisMsg('', true); const systemPrompt = `Você é JARVIS, um assistente pessoal inteligente, moderno e eficiente.\nVocê fala português brasileiro de forma natural, amigável e direta.\n${systemExtra}\nRegras:\n- Seja conciso mas completo\n- Use emojis com moderação para deixar mais amigável\n- Nunca faça coisas ilegais ou prejudiciais\n- Só execute ações que o usuário autorizar\n- Mantenha o controle sempre com o usuário\n- Se não souber algo, diga honestamente\n- Formate bem com quebras de linha quando necessário`; conversationHistory.push({ role: 'user', content: userMessage }); try {const apiKey = settings.apiKey; let responseText = ''; if (apiKey && apiKey.startsWith('sk-ant-')) {const res = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({model: 'claude-sonnet-4-6', max_tokens: 1000, system: systemPrompt, messages: conversationHistory.slice(-10),})}); const data = await res.json(); if (data.error) throw new Error(data.error.message); responseText = data.content[0].text;} else {responseText = localFallback(userMessage);} conversationHistory.push({ role: 'assistant', content: responseText }); const existing = document.getElementById('typingMsg'); if (existing) existing.remove(); addJarvisMsg(responseText); setJarvisState('PRONTO');} catch (err) {const existing = document.getElementById('typingMsg'); if (existing) existing.remove(); addJarvisMsg(`⚠️ Erro de conexão. Verifique sua chave API nas **Configurações** ou sua internet.\n\n_Erro: ${err.message}_`); setJarvisState('ERRO'); setTimeout(() => setJarvisState('PRONTO'), 2000);}}
+
+function localFallback(msg) {const lower = msg.toLowerCase(); const name = settings.userName; if (lower.includes('olá') || lower.includes('oi') || lower.includes('ei')) return `Olá, ${name}! Tudo bem? 😊 Como posso te ajudar?`; if (lower.includes('clima') || lower.includes('tempo')) return `🌤️ Para ver o clima em tempo real, preciso da minha chave API ativa.\n\nAdicione sua chave Anthropic em **Configurações** para eu funcionar com todo meu potencial!\n\nAlternativamente, você pode verificar o clima em:\n• weather.com\n• tempo.ig.com.br`; if (lower.includes('tarefa') || lower.includes('lista') || lower.includes('todo')) return `✅ **Suas tarefas de hoje:**\n\n1. Definir as 3 prioridades do dia\n2. Revisar compromissos na agenda\n3. Separar 25min para foco profundo\n4. Responder mensagens importantes\n5. Reservar tempo para descanso\n\n💡 Quer que eu detalhe alguma?`; if (lower.includes('pomodoro') || lower.includes('foco') || lower.includes('concentra')) return `🍅 **Técnica Pomodoro:**\n\n⏱️ 25 minutos de foco total\n🔔 5 minutos de pausa\n🔁 Repita 4 vezes\n😴 Pausa longa de 20-30 min\n\n**Dicas:**\n• Desligue notificações\n• Tenha água por perto\n• Anote distrações e volte depois\n\nQuer que eu ative um timer?`; if (lower.includes('motivaç') || lower.includes('inspire') || lower.includes('motivar')) return `💪 "${name}, cada passo conta."\n\nA diferença entre quem consegue e quem não consegue está na consistência — não no talento.\n\n🎯 Foque no processo, não só no resultado. O progresso diário, mesmo que pequeno, leva a lugares grandes.\n\nVamos lá?`; if (lower.includes('horas') || lower.includes('que hora')) return `🕐 São ${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}.\n\nData: ${new Date().toLocaleDateString('pt-BR', {weekday:'long',day:'numeric',month:'long'})}`; if (lower.includes('config') || lower.includes('chave') || lower.includes('api')) return `🔑 Para usar o Jarvis com IA completa:\n\n1. Acesse **anthropic.com**\n2. Crie uma conta gratuita\n3. Gere uma chave API\n4. Cole em **Configurações** → Chave API\n\nCom a chave ativa, posso responder qualquer pergunta, pesquisar, resumir textos e muito mais!`; if (lower.includes('gaming') || lower.includes('jogo') || lower.includes('game')) return `🎮 **Modo Gaming ativado!**\n\nPosso te ajudar com:\n• Dicas de estratégia\n• Informações sobre jogos\n• Builds e configurações\n• Histórias de universos de jogos\n\nQue jogo você está jogando?`; if (lower.includes('estudo') || lower.includes('aprend') || lower.includes('escola')) return `📚 **Modo Estudos:**\n\n**Técnicas eficientes:**\n• Pomodoro (25/5 min)\n• Feynman (explique como se ensinasse)\n• Revisão espaçada\n• Mind maps\n\n**Hoje eu posso:**\n• Explicar qualquer tópico\n• Criar resumos\n• Fazer perguntas para você treinar\n\nQual matéria?`; return `Entendi! 🤖\n\nPara te responder com precisão sobre "${msg}", preciso da minha conexão com IA completa.\n\nAdicione sua **chave API Anthropic** nas Configurações e poderei responder qualquer pergunta!\n\nEnquanto isso, tente perguntar sobre:\n• Clima e tempo\n• Técnicas de estudo\n• Produtividade\n• Motivação`;}
+
+async function runAutomation(type) {showPage('chat'); const prompts = {morning: `Execute minha rotina da manhã: me dê um bom dia motivador, pergunte como estou me sentindo, liste 3 prioridades sugeridas para hoje e dê uma dica rápida de produtividade. Seja animado e positivo!`,study: `Inicie minha sessão de estudos: apresente a técnica Pomodoro de forma resumida, me pergunte qual matéria vou estudar hoje, dê dicas de foco e ofereça um quiz rápido para começar.`,work: `Ative meu modo trabalho: me ajude a definir as 3 tarefas mais importantes do dia, explique como priorizar com a matriz de Eisenhower simplificada e dê uma estratégia de foco.`,gaming: `Ative o modo gaming! Dê uma saudação épica de gamer, pergunte que jogo estou jogando e ofereça ajuda com estratégias, builds, lore ou dicas gerais.`,night: `Inicie minha rotina noturna: me ajude a revisar o que conquistei hoje, planejar as 3 principais tarefas de amanhã, dê uma dica de sono saudável e termine com algo positivo.`,focus: `Ative meu modo foco total: defina uma sessão de 25 minutos (Pomodoro), me dê instruções de como eliminar distrações, liste o que devo fazer nessa sessão e motive-me para começar.`,}; addUserMsg(`⚡ Automação: ${type.toUpperCase()}`); await askJarvis(prompts[type]);}
+
+async function doSearch() {const field = document.getElementById('searchField'); const query = field.value.trim(); if (!query) return; const area = document.getElementById('researchArea'); area.innerHTML = `<div style="display:flex;align-items:center;padding:20px;color:var(--muted)"><span class="spinner"></span> Pesquisando "${query}"...</div>`; const systemExtra = `Você é um especialista em pesquisa. Ao receber um tópico, forneça:\n1. Um resumo claro e objetivo\n2. Pontos principais (bullet points)\n3. Curiosidades interessantes\n4. Links ou recursos sugeridos (mencione sites conhecidos)\nSeja informativo e organizado.`; try {const result = await getAIResponse(query + ' — pesquise e me dê um resumo completo com pontos principais', systemExtra); const formatted = result.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); area.innerHTML = `<div class="research-result"><h3>🔍 ${query.toUpperCase()}</h3><p>${formatted}</p></div>`;} catch (e) {area.innerHTML = `<div class="empty-state"><span class="icon">⚠️</span><p>Erro na pesquisa. Configure sua chave API.</p></div>`;}}
+
+document.getElementById('searchField').addEventListener('keydown', (e) => {if (e.key === 'Enter') doSearch();});
+
+const moduleConfig = {summarize: { title: '📝 RESUMO DE TEXTO', placeholder: 'Cole o texto para resumir...', prompt: 'Resuma o texto a seguir de forma clara e concisa, destacando os pontos principais:\n\n' },translate:  { title: '🌐 TRADUÇÃO', placeholder: 'Cole o texto para traduzir...', prompt: 'Detecte o idioma e traduza para português brasileiro (ou inglês se já for português):\n\n' },task:       { title: '✅ ORGANIZAR TAREFAS', placeholder: 'Liste suas tarefas ou descreva o que precisa fazer...', prompt: 'Organize e priorize as seguintes tarefas, adicionando estimativas de tempo:\n\n' },explain:    { title: '💡 EXPLICAR CONTEÚDO', placeholder: 'O que você quer entender?', prompt: 'Explique de forma simples e didática, como se fosse para um adolescente, o seguinte:\n\n' },write:      { title: '✍️ CRIAR TEXTO', placeholder: 'Descreva o que precisa: email, mensagem, redação...', prompt: 'Crie um texto profissional e bem estruturado conforme solicitado:\n\n' },math:       { title: '🧮 RESOLVER MATEMÁTICA', placeholder: 'Digite o problema matemático...', prompt: 'Resolva o seguinte problema matemático passo a passo, explicando cada etapa:\n\n' },};
+
+function openModule(type) {currentModule = type; const cfg = moduleConfig[type]; document.getElementById('modalTitle').innerHTML = cfg.title + ' <button class="modal-close" onclick="closeModuleModal()">✕</button>'; document.getElementById('modalInput').placeholder = cfg.placeholder; document.getElementById('modalInput').value = ''; document.getElementById('modalOutput').textContent = ''; document.getElementById('moduleModal').classList.add('open');}
+
+function closeModuleModal() {document.getElementById('moduleModal').classList.remove('open'); currentModule = null;}
+
+function closeModal(e) {if (e.target === document.getElementById('moduleModal')) closeModuleModal();}
+
+async function runModule() {const input = document.getElementById('modalInput').value.trim(); if (!input) return; const cfg = moduleConfig[currentModule]; const output = document.getElementById('modalOutput'); const btn = document.getElementById('modalRunBtn'); output.innerHTML = '<span class="spinner"></span> Processando...'; btn.disabled = true; try {const result = await getAIResponse(cfg.prompt + input, ''); output.innerHTML = result.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');} catch (e) {output.textContent = '⚠️ Configure sua chave API para usar este módulo.';}  btn.disabled = false;}
+
+async function getAIResponse(prompt, systemExtra) {const apiKey = settings.apiKey; if (!apiKey || !apiKey.startsWith('sk-ant-')) {return localFallback(prompt);} const res = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({model: 'claude-sonnet-4-6', max_tokens: 1000, system: `Você é JARVIS, assistente inteligente em português. ${systemExtra}`, messages: [{ role: 'user', content: prompt }]})}); const data = await res.json(); if (data.error) throw new Error(data.error.message); return data.content[0].text;}
+
+function initSpeechRecognition() {const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) {document.getElementById('voiceHint').textContent = '⚠️ Voz não disponível neste navegador'; return;} recognition = new SR(); recognition.lang = 'pt-BR'; recognition.continuous = false; recognition.interimResults = false; recognition.onresult = (e) => {const text = e.results[0][0].transcript; document.getElementById('inputField').value = text; stopRecording(); sendMessage();}; recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording();}
+
+function toggleVoice() {if (!recognition) {addJarvisMsg('Voz não disponível. Use Chrome ou Safari para suporte de voz.'); return;} if (isRecording) {stopRecording();} else {startRecording();}}
+
+function startRecording() {isRecording = true; recognition.start(); document.getElementById('btnMic').classList.add('recording'); document.getElementById('btnMic').textContent = '🔴'; document.getElementById('avatarCore').classList.add('listening'); setJarvisState('OUVINDO');}
+
+function stopRecording() {isRecording = false; try { recognition.stop(); } catch(e) {} document.getElementById('btnMic').classList.remove('recording'); document.getElementById('btnMic').textContent = '🎤'; document.getElementById('avatarCore').classList.remove('listening'); setJarvisState('PRONTO');}
+
+function speak(text) {if (!settings.speechOutput) return; if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); const utt = new SpeechSynthesisUtterance(text); utt.lang = 'pt-BR'; utt.rate = 0.95; utt.pitch = 1; window.speechSynthesis.speak(utt);}
+
+function loadSettings() {try {const s = JSON.parse(localStorage.getItem('jarvis_settings') || '{}'); settings = { ...settings, ...s }; if (settings.apiKey) document.getElementById('apiKeyInput').value = settings.apiKey; if (settings.userName) document.getElementById('userNameInput').value = settings.userName; updateToggleUI();} catch(e) {}}
+
+function saveSettings() {settings.apiKey = document.getElementById('apiKeyInput').value.trim(); settings.userName = document.getElementById('userNameInput').value.trim() || 'Usuário'; try { localStorage.setItem('jarvis_settings', JSON.stringify(settings)); } catch(e) {} updateToggleUI(); showPage('chat'); addJarvisMsg(`✅ Configurações salvas! Olá, **${settings.userName}**! Tudo pronto.`);}
+
+function toggleSetting(key) {if (key === 'voice') settings.voiceInput = !settings.voiceInput; if (key === 'speech') settings.speechOutput = !settings.speechOutput; if (key === 'dark') settings.darkMode = !settings.darkMode; updateToggleUI();}
+
+function updateToggleUI() {document.getElementById('toggleVoiceOpt').className = 'toggle' + (settings.voiceInput ? ' on' : ''); document.getElementById('toggleSpeech').className   = 'toggle' + (settings.speechOutput ? ' on' : ''); document.getElementById('toggleDark').className     = 'toggle' + (settings.darkMode ? ' on' : ''); if (settings.darkMode) {document.documentElement.style.setProperty('--bg-deep',  '#000'); document.documentElement.style.setProperty('--bg-panel', '#050505'); document.documentElement.style.setProperty('--bg-card',  '#0a0a0a');} else {document.documentElement.style.setProperty('--bg-deep',  '#040810'); document.documentElement.style.setProperty('--bg-panel', '#0a1628'); document.documentElement.style.setProperty('--bg-card',  '#0f1e38');}}
+
+function setJarvisState(s) {document.getElementById('jarvisState').textContent = s;}
+</script>
+</body>
+</html>
+<script>
+if ('serviceWorker' in navigator) {navigator.serviceWorker.register('sw.js').catch(() => {});}
+</script>
